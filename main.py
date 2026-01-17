@@ -4,7 +4,6 @@ import time
 app = Flask(__name__)
 
 # DATABASE
-# Structure: { "123456": { "hats": ["Hat1"], "jobId": "uuid...", "last_seen": 17000000 } }
 active_players = {}
 
 @app.route('/')
@@ -18,7 +17,7 @@ def update_player():
         data = request.json
         user_id = str(data.get("userId"))
         hats = data.get("hats")
-        job_id = str(data.get("jobId", "unknown")) # Default to unknown if missing
+        job_id = str(data.get("jobId", "unknown"))
 
         if not user_id or hats is None:
             return jsonify({"error": "Missing data"}), 400
@@ -40,7 +39,6 @@ def get_players():
     current_time = time.time()
     cutoff = current_time - 15 
     
-    # Get the requester's Job ID from the URL (e.g. /poll?jobId=123-abc)
     requester_job_id = request.args.get('jobId')
 
     # Clean up old players first
@@ -54,10 +52,15 @@ def get_players():
             uid: data for uid, data in active_players.items() 
             if data.get('jobId') == requester_job_id
         }
-        return jsonify(filtered_players), 200
+        # IMPORTANT: Return empty dict as JSON, not empty string
+        response = jsonify(filtered_players)
+        response.headers['Content-Type'] = 'application/json'
+        return response, 200
     
-    # Fallback: If no jobId sent, return everyone (or empty dict if you prefer strictness)
-    return jsonify(active_players), 200
+    # Fallback
+    response = jsonify(active_players)
+    response.headers['Content-Type'] = 'application/json'
+    return response, 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
